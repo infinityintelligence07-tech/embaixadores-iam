@@ -2,6 +2,11 @@
 
 Landing de candidatura e painel de aprovação/rejeição, com identidade visual Embaixadores, Supabase e Cloudflare Workers.
 
+## Live
+
+- Landing: https://embaixadores-forms.infinityintelligence07.workers.dev
+- Admin: https://embaixadores-forms.infinityintelligence07.workers.dev/admin
+
 ## Stack
 
 - React + Vite + Cloudflare Vite Plugin
@@ -12,10 +17,11 @@ Landing de candidatura e painel de aprovação/rejeição, com identidade visual
 
 ```bash
 npm install
+cp .dev.vars.example .dev.vars
 npm run dev
 ```
 
-Secrets locais ficam em `.dev.vars` (veja `.dev.vars.example`).
+Secrets locais ficam em `.dev.vars` (não versionado).
 
 ## Deploy
 
@@ -30,13 +36,11 @@ npm run deploy
 
 ## Domínio customizado
 
-No `wrangler.jsonc`:
+No `wrangler.jsonc`, adicione (domínio precisa estar na mesma conta Cloudflare):
 
 ```jsonc
 "routes": [{ "pattern": "embaixadores.seudominio.com", "custom_domain": true }]
 ```
-
-O domínio precisa estar numa zona Cloudflare da mesma conta.
 
 ## Rotas
 

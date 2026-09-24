@@ -24,6 +24,7 @@ dist-ssr
 .idea
 .DS_Store
 **/.DS_Store
+public/.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
