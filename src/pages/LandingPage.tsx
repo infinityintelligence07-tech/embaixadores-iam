@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./LandingPage.css";
 
@@ -12,7 +12,8 @@ type FormState = {
   nome_completo: string;
   email: string;
   whatsapp: string;
-  nome_conta: string;
+  instagram_handle: string;
+  tiktok_handle: string;
   redes_sociais: string[];
 };
 
@@ -20,29 +21,57 @@ const INITIAL: FormState = {
   nome_completo: "",
   email: "",
   whatsapp: "",
-  nome_conta: "",
+  instagram_handle: "",
+  tiktok_handle: "",
   redes_sociais: [],
 };
 
-function Marquee({ items }: { items: string[] }) {
-  const sequence = [...items, ...items, ...items, ...items];
+function normalizeHandle(value: string) {
+  const clean = value.trim().replace(/^@+/, "");
+  return clean ? `@${clean}` : "";
+}
+
+function IconInstagram() {
   return (
-    <div className="marquee" aria-hidden="true">
-      <div className="marquee__track">
-        <span>
-          {sequence.map((item, index) => (
-            <em key={`${item}-${index}`}>{item}</em>
-          ))}
-        </span>
-        <span>
-          {sequence.map((item, index) => (
-            <em key={`dup-${item}-${index}`}>{item}</em>
-          ))}
-        </span>
-      </div>
-    </div>
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="net-icon">
+      <rect
+        x="2.75"
+        y="2.75"
+        width="18.5"
+        height="18.5"
+        rx="5.2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+      />
+      <circle
+        cx="12"
+        cy="12"
+        r="4.35"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+      />
+      <circle cx="17.55" cy="6.45" r="1.25" fill="currentColor" />
+    </svg>
   );
 }
+
+function IconTikTok() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="net-icon">
+      <path
+        fill="currentColor"
+        d="M14.35 3h2.55c.18 1.62 1.2 3.05 2.6 3.8v2.45a6.9 6.9 0 0 1-3.25-1.05v6.2c0 3.45-2.7 6.15-6.15 6.15S4 17.85 4 14.4c0-3.25 2.5-5.95 5.7-6.2v2.55c-1.55.25-2.7 1.55-2.7 3.2 0 1.8 1.45 3.25 3.25 3.25s3.25-1.45 3.25-3.25V3z"
+      />
+    </svg>
+  );
+}
+
+const ICONS: Record<string, ReactNode> = {
+  instagram: <IconInstagram />,
+  tiktok: <IconTikTok />,
+};
 
 export function LandingPage() {
   const navigate = useNavigate();
@@ -67,16 +96,44 @@ export function LandingPage() {
     setError("");
     setLoading(true);
 
+    const hasInstagram = form.redes_sociais.includes("instagram");
+    const hasTiktok = form.redes_sociais.includes("tiktok");
+    if (!hasInstagram && !hasTiktok) {
+      setError("Selecione Instagram, TikTok ou os dois.");
+      setLoading(false);
+      return;
+    }
+    if (hasInstagram && !normalizeHandle(form.instagram_handle)) {
+      setError("Informe o @ do Instagram.");
+      setLoading(false);
+      return;
+    }
+    if (hasTiktok && !normalizeHandle(form.tiktok_handle)) {
+      setError("Informe o @ do TikTok.");
+      setLoading(false);
+      return;
+    }
+
     try {
+      const payload = {
+        nome_completo: form.nome_completo,
+        email: form.email,
+        whatsapp: form.whatsapp,
+        redes_sociais: form.redes_sociais,
+        instagram_handle: hasInstagram
+          ? normalizeHandle(form.instagram_handle)
+          : "",
+        tiktok_handle: hasTiktok ? normalizeHandle(form.tiktok_handle) : "",
+      };
       const response = await fetch("/api/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
-      const payload = (await response.json()) as { error?: string };
+      const result = (await response.json()) as { error?: string };
 
       if (!response.ok) {
-        throw new Error(payload.error || "Falha ao enviar");
+        throw new Error(result.error || "Falha ao enviar");
       }
 
       navigate("/sucesso");
@@ -88,167 +145,221 @@ export function LandingPage() {
   }
 
   return (
-    <div className="landing">
-      <Marquee
-        items={["ALL IN", "EMBAIXADORES", "ACORDE SUA MENTE", "NO DOUBT"]}
-      />
+    <div className="lp">
+      <div className="lp__scene" aria-hidden="true">
+        <img src="/brand/hero-atmosphere.png" alt="" className="lp__atmosphere" />
+        <div className="lp__scene-veil" />
+        <div className="lp__mark">
+          <svg viewBox="0 0 220 300" className="lp__mark-svg">
+            <path
+              fill="currentColor"
+              d="M24 18h172v42H72v54h112v40H72v66h132v42H24V18z"
+            />
+          </svg>
+        </div>
+        <div className="lp__grain" />
+      </div>
 
-      <header className="landing__nav">
-        <img
-          src="/brand/logo.png"
-          alt="Embaixadores — Acorde sua mente"
-          className="landing__logo"
-        />
-        <Link to="/admin" className="landing__admin-link">
-          Área admin
+      <header className="lp-top">
+        <img src="/brand/iam-logo.png" alt="iAM" className="lp-top__iam" />
+        <Link to="/admin" className="lp-top__link">
+          Admin
         </Link>
       </header>
 
-      <section className="hero">
-        <div className="hero__atmosphere" aria-hidden="true" />
-        <div className="hero__rail" aria-hidden="true">
-          <span>FOCUS</span>
-          <span>ENERGY</span>
-          <span>DISCIPLINE</span>
-          <span>VICTORY</span>
-        </div>
-
-        <div className="hero__copy">
-          <p className="hero__eyebrow">Programa Embaixadores da Corda</p>
-          <h1 className="hero__title">
-            <span className="hero__title-ghost">MATCH</span>
-            <span className="hero__title-main">EMBAIXA</span>
-            <span className="hero__title-accent">DORES</span>
-          </h1>
-          <p className="hero__lead">
-            Entre pro time. Preencha seus dados, escolha suas redes e aguarde a
-            aprovação do perfil.
-          </p>
-          <a className="btn btn--lime" href="#candidatura">
-            Quero ser embaixador
-          </a>
-        </div>
-
-        <div className="hero__mark" aria-hidden="true">
-          <img src="/brand/icone.png" alt="" />
-        </div>
-      </section>
-
-      <Marquee items={["INSTAGRAM", "TIKTOK", "COMUNIDADE", "PERFORMANCE"]} />
-
-      <section className="apply" id="candidatura">
-        <div className="apply__intro">
-          <p className="apply__kicker">Candidatura</p>
-          <h2 className="apply__title">
-            Preencha.
+      <main className="lp-main">
+        <section className="lp-hero">
+          <img
+            src="/brand/logo.png"
+            alt="Embaixadores — Acorde sua mente"
+            className="lp-hero__brand"
+          />
+          <h1 className="lp-head">
+            Nosso propósito vai além
             <br />
-            <span>Entre no jogo.</span>
-          </h2>
-          <p className="apply__text">
-            Seleção múltipla de redes — você pode marcar Instagram e TikTok ao
-            mesmo tempo.
+            de criar conteúdo!
+          </h1>
+          <p className="lp-desc">
+            Queremos disseminar uma mensagem capaz de transformar vidas. Este
+            formulário reúne as pessoas que farão parte desse movimento,
+            compartilhando nossos conteúdos e cortes nas redes sociais.
           </p>
-        </div>
+          <p className="lp-promise">
+            Quanto mais longe a mensagem chegar, mais vidas poderão ser
+            impactadas.
+          </p>
+          <a className="btn btn--primary btn--lg lp-cta" href="#formulario">
+            Quero fazer parte
+          </a>
+        </section>
 
-        <form className="apply__form" onSubmit={onSubmit}>
-          <div className="field">
-            <label htmlFor="nome_completo">
-              Nome completo <span>*</span>
-            </label>
-            <input
-              id="nome_completo"
-              name="nome_completo"
-              autoComplete="name"
-              placeholder="Seu nome"
-              required
-              value={form.nome_completo}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, nome_completo: e.target.value }))
-              }
-            />
-          </div>
+        <section className="lp-form" id="formulario">
+          <header className="lp-form__intro">
+            <p className="lp-form__eyebrow">Inscrição</p>
+            <h2 className="lp-form__title">Candidatura</h2>
+            <p className="lp-form__sub">
+              Marque Instagram, TikTok ou os dois. O @ de cada rede marcada é
+              obrigatório.
+            </p>
+          </header>
 
-          <div className="field">
-            <label htmlFor="email">
-              E-mail <span>*</span>
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              placeholder="voce@email.com"
-              required
-              value={form.email}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, email: e.target.value }))
-              }
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="whatsapp">
-              WhatsApp <span>*</span>
-            </label>
-            <input
-              id="whatsapp"
-              name="whatsapp"
-              type="tel"
-              autoComplete="tel"
-              placeholder="(11) 99999-9999"
-              required
-              value={form.whatsapp}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, whatsapp: e.target.value }))
-              }
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="nome_conta">
-              Nome da conta <span>*</span>
-            </label>
-            <input
-              id="nome_conta"
-              name="nome_conta"
-              placeholder="@seuusuario"
-              required
-              value={form.nome_conta}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, nome_conta: e.target.value }))
-              }
-            />
-          </div>
-
-          <fieldset className="field apply__networks">
-            <legend>
-              Rede social <span>*</span>
-            </legend>
-            <div className="check-grid">
-              {NETWORKS.map((network) => (
-                <label className="check" key={network.id}>
-                  <input
-                    type="checkbox"
-                    checked={form.redes_sociais.includes(network.id)}
-                    onChange={() => toggleNetwork(network.id)}
-                  />
-                  <span>{network.label}</span>
+          <form className="lp-fields" onSubmit={onSubmit}>
+            <div className="lp-fields__grid">
+              <div className="field">
+                <label htmlFor="nome_completo">
+                  Nome completo <span>*</span>
                 </label>
-              ))}
+                <input
+                  id="nome_completo"
+                  name="nome_completo"
+                  autoComplete="name"
+                  placeholder="Seu nome"
+                  required
+                  value={form.nome_completo}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      nome_completo: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="email">
+                  E-mail <span>*</span>
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="voce@email.com"
+                  required
+                  value={form.email}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, email: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="whatsapp">
+                  WhatsApp <span>*</span>
+                </label>
+                <input
+                  id="whatsapp"
+                  name="whatsapp"
+                  type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  placeholder="(11) 99999-9999"
+                  required
+                  value={form.whatsapp}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, whatsapp: e.target.value }))
+                  }
+                />
+              </div>
+
             </div>
-          </fieldset>
 
-          {error ? <div className="form-error">{error}</div> : null}
+            <fieldset className="lp-networks">
+              <legend>
+                Qual a rede social que foi criada <span>*</span>
+              </legend>
+              <div className="net-grid">
+                {NETWORKS.map((network) => {
+                  const selected = form.redes_sociais.includes(network.id);
+                  return (
+                    <button
+                      key={network.id}
+                      type="button"
+                      className={`net-tile${selected ? " is-on" : ""}`}
+                      aria-pressed={selected}
+                      onClick={() => toggleNetwork(network.id)}
+                    >
+                      {selected ? (
+                        <span className="net-tile__check" aria-hidden="true">
+                          ✓
+                        </span>
+                      ) : null}
+                      {ICONS[network.id]}
+                      <span>{network.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
 
-          <button className="btn btn--lime" type="submit" disabled={loading}>
-            {loading ? "Enviando..." : "Enviar candidatura"}
-          </button>
-        </form>
-      </section>
+            {form.redes_sociais.includes("instagram") ||
+            form.redes_sociais.includes("tiktok") ? (
+              <div className="lp-handles">
+                {form.redes_sociais.includes("instagram") ? (
+                  <div className="field">
+                    <label htmlFor="instagram_handle">
+                      @ do Instagram <span>*</span>
+                    </label>
+                    <input
+                      id="instagram_handle"
+                      name="instagram_handle"
+                      placeholder="@seuinstagram"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      required
+                      value={form.instagram_handle}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          instagram_handle: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                ) : null}
+                {form.redes_sociais.includes("tiktok") ? (
+                  <div className="field">
+                    <label htmlFor="tiktok_handle">
+                      @ do TikTok <span>*</span>
+                    </label>
+                    <input
+                      id="tiktok_handle"
+                      name="tiktok_handle"
+                      placeholder="@seutiktok"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      required
+                      value={form.tiktok_handle}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          tiktok_handle: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
-      <footer className="landing__footer">
-        <img src="/brand/logo.png" alt="" />
-        <p>Embaixadores da Corda · Acorde sua mente</p>
+            {error ? <div className="form-error">{error}</div> : null}
+
+            <button
+              className="btn btn--primary btn--lg lp-submit"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? "Enviando..." : "Enviar candidatura"}
+            </button>
+          </form>
+        </section>
+      </main>
+
+      <footer className="lp-foot">
+        <img src="/brand/iam-logo.png" alt="iAM" className="lp-foot__iam" />
+        <p>Embaixadores Acorde Sua Mente</p>
       </footer>
     </div>
   );

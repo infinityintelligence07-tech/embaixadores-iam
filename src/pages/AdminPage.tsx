@@ -39,6 +39,47 @@ function formatPhone(value: string) {
   return value;
 }
 
+function formatHandle(value: string) {
+  const clean = value.replace(/^@+/, "").trim();
+  return clean ? `@${clean}` : value;
+}
+
+function instagramUrl(value: string) {
+  const clean = value.replace(/^@+/, "").trim();
+  return clean ? `https://instagram.com/${encodeURIComponent(clean)}` : "#";
+}
+
+function tiktokUrl(value: string) {
+  const clean = value.replace(/^@+/, "").trim();
+  return clean ? `https://www.tiktok.com/@${encodeURIComponent(clean)}` : "#";
+}
+
+function accountLinks(nomeConta: string) {
+  const links: { label: string; href: string }[] = [];
+  const instagram = nomeConta.match(/Instagram\s+(@?\S+)/i)?.[1];
+  const tiktok = nomeConta.match(/TikTok\s+(@?\S+)/i)?.[1];
+
+  if (instagram) {
+    links.push({
+      label: `Instagram ${formatHandle(instagram)}`,
+      href: instagramUrl(instagram),
+    });
+  }
+  if (tiktok) {
+    links.push({
+      label: `TikTok ${formatHandle(tiktok)}`,
+      href: tiktokUrl(tiktok),
+    });
+  }
+  if (links.length === 0 && nomeConta.trim()) {
+    links.push({
+      label: formatHandle(nomeConta),
+      href: instagramUrl(nomeConta),
+    });
+  }
+  return links;
+}
+
 export function AdminPage() {
   const [token, setToken] = useState(
     () => sessionStorage.getItem(TOKEN_KEY) ?? "",
@@ -173,10 +214,13 @@ export function AdminPage() {
     return (
       <main className="admin-login">
         <form className="admin-login__panel" onSubmit={onLogin}>
-          <img src="/brand/logo.png" alt="Embaixadores" />
-          <p className="admin-login__kicker">Área administrativa</p>
-          <h1>Aprovar perfis</h1>
-          <div className="field">
+          <img src="/brand/iam-logo.png" alt="iAM" className="admin-login__logo" />
+          <p className="admin-login__kicker">Administração</p>
+          <h1>Entrar</h1>
+          <p className="admin-login__hint">
+            Acesse para aprovar ou rejeitar candidaturas.
+          </p>
+          <div className="admin-field">
             <label htmlFor="admin-password">Senha</label>
             <input
               id="admin-password"
@@ -187,12 +231,16 @@ export function AdminPage() {
               required
             />
           </div>
-          {loginError ? <div className="form-error">{loginError}</div> : null}
-          <button className="btn btn--lime" type="submit" disabled={loggingIn}>
-            {loggingIn ? "Entrando..." : "Entrar"}
+          {loginError ? <div className="admin-error">{loginError}</div> : null}
+          <button
+            className="admin-btn admin-btn--primary"
+            type="submit"
+            disabled={loggingIn}
+          >
+            {loggingIn ? "Entrando..." : "Continuar"}
           </button>
           <Link to="/" className="admin-login__back">
-            ← Voltar à landing
+            Voltar ao formulário
           </Link>
         </form>
       </main>
@@ -202,28 +250,32 @@ export function AdminPage() {
   return (
     <div className="admin">
       <header className="admin__top">
-        <div>
-          <img src="/brand/logo.png" alt="Embaixadores" />
+        <div className="admin__brand">
+          <img src="/brand/iam-logo.png" alt="iAM" />
           <div>
-            <p className="admin__kicker">Painel</p>
+            <p className="admin__kicker">Administração</p>
             <h1>Candidaturas</h1>
           </div>
         </div>
         <div className="admin__top-actions">
           <button
-            className="btn btn--ghost"
+            className="admin-btn admin-btn--secondary"
             type="button"
             onClick={() => void loadApplications(token)}
           >
             Atualizar
           </button>
-          <button className="btn btn--ghost" type="button" onClick={logout}>
+          <button
+            className="admin-btn admin-btn--secondary"
+            type="button"
+            onClick={logout}
+          >
             Sair
           </button>
         </div>
       </header>
 
-      <section className="admin__stats">
+      <section className="admin__stats" aria-label="Resumo">
         <article>
           <strong>{counts.pending}</strong>
           <span>Pendentes</span>
@@ -260,10 +312,10 @@ export function AdminPage() {
         ))}
       </div>
 
-      {listError ? <div className="form-error admin__error">{listError}</div> : null}
+      {listError ? <div className="admin-error admin__error">{listError}</div> : null}
 
       {loading ? (
-        <p className="admin__empty">Carregando candidaturas...</p>
+        <p className="admin__empty">Carregando…</p>
       ) : filtered.length === 0 ? (
         <p className="admin__empty">Nenhuma candidatura neste filtro.</p>
       ) : (
@@ -273,9 +325,21 @@ export function AdminPage() {
               <div className="admin-card__head">
                 <div>
                   <h2>{item.nome_completo}</h2>
-                  <p>{item.nome_conta}</p>
+                  <div className="admin-card__handles">
+                    {accountLinks(item.nome_conta).map((link) => (
+                      <a
+                        key={link.href}
+                        className="admin-card__handle"
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
                 </div>
-                <span className={`badge badge--${item.status}`}>
+                <span className={`admin-badge admin-badge--${item.status}`}>
                   {STATUS_LABEL[item.status]}
                 </span>
               </div>
@@ -283,11 +347,21 @@ export function AdminPage() {
               <dl className="admin-card__meta">
                 <div>
                   <dt>E-mail</dt>
-                  <dd>{item.email}</dd>
+                  <dd>
+                    <a href={`mailto:${item.email}`}>{item.email}</a>
+                  </dd>
                 </div>
                 <div>
                   <dt>WhatsApp</dt>
-                  <dd>{formatPhone(item.whatsapp)}</dd>
+                  <dd>
+                    <a
+                      href={`https://wa.me/55${item.whatsapp.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {formatPhone(item.whatsapp)}
+                    </a>
+                  </dd>
                 </div>
                 <div>
                   <dt>Redes</dt>
@@ -301,7 +375,7 @@ export function AdminPage() {
 
               <div className="admin-card__actions">
                 <button
-                  className="btn btn--ok"
+                  className="admin-btn admin-btn--ok"
                   type="button"
                   disabled={updatingId === item.id || item.status === "approved"}
                   onClick={() => void updateStatus(item.id, "approved")}
@@ -309,7 +383,7 @@ export function AdminPage() {
                   Aprovar
                 </button>
                 <button
-                  className="btn btn--danger"
+                  className="admin-btn admin-btn--danger"
                   type="button"
                   disabled={updatingId === item.id || item.status === "rejected"}
                   onClick={() => void updateStatus(item.id, "rejected")}

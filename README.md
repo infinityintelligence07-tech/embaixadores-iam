@@ -4,8 +4,10 @@ Landing de candidatura e painel de aprovação/rejeição, com identidade visual
 
 ## Live
 
-- Landing: https://embaixadores-forms.infinityintelligence07.workers.dev
-- Admin: https://embaixadores-forms.infinityintelligence07.workers.dev/admin
+- Landing: https://embaixadores.iamcontrol.com.br
+- Admin: https://embaixadores.iamcontrol.com.br/admin
+- Workers.dev: https://embaixadores-forms.infinityintelligence07.workers.dev
+- Supabase: https://pmzzvirpyzgfwaqsxqev.supabase.co
 
 ## Stack
 

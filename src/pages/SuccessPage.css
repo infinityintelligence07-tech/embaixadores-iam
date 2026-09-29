@@ -1,48 +1,62 @@
 .success {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: 2rem;
+  padding: 28px 20px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   background:
-    radial-gradient(circle at 20% 20%, rgba(214, 255, 0, 0.12), transparent 40%),
-    linear-gradient(160deg, #011752, #010d33 60%, #0034b8);
+    radial-gradient(ellipse 70% 50% at 80% 10%, rgba(47, 107, 255, 0.32), transparent 55%),
+    linear-gradient(180deg, #000428, #0034b8);
 }
 
 .success__panel {
-  width: min(560px, 100%);
-  display: grid;
-  gap: 1.25rem;
-  padding: clamp(1.5rem, 4vw, 2.5rem);
-  border: 1px solid rgba(214, 255, 0, 0.28);
-  background: rgba(1, 13, 51, 0.72);
-  animation: rise 0.7s ease both;
+  position: relative;
+  z-index: 1;
+  width: min(460px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .success__kicker {
   margin: 0;
-  font-family: var(--font-ui);
-  font-weight: 700;
-  letter-spacing: 0.18em;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--lime);
-  font-size: 0.85rem;
+  color: var(--sky-bright);
 }
 
 .success h1 {
   margin: 0;
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: clamp(3rem, 10vw, 5rem);
-  line-height: 0.9;
-  text-transform: uppercase;
-}
-
-.success h1 span {
-  color: var(--lime);
+  font-family: var(--font-body);
+  font-size: clamp(1.65rem, 5.5vw, 2.1rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  text-transform: none;
+  overflow: visible;
+  padding-block: 0;
 }
 
 .success__text {
   margin: 0;
-  color: var(--muted);
-  line-height: 1.55;
+  color: var(--fog);
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+.success .btn {
+  align-self: stretch;
+  margin-top: 8px;
+  min-height: 56px;
+}
+
+@media (min-width: 480px) {
+  .success .btn {
+    align-self: flex-start;
+    min-width: 200px;
+  }
 }

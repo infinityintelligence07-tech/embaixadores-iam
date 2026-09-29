@@ -28,6 +28,8 @@ type SubmitBody = {
   email?: string;
   whatsapp?: string;
   nome_conta?: string;
+  instagram_handle?: string;
+  tiktok_handle?: string;
   redes_sociais?: string[];
 };
 
@@ -65,6 +67,11 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function normalizeHandle(value: string): string {
+  const clean = value.trim().replace(/^@+/, "");
+  return clean ? `@${clean}` : "";
+}
+
 async function requireAdmin(
   request: Request,
   env: Bindings,
@@ -92,7 +99,6 @@ app.post("/api/applications", async (c) => {
   const nomeCompleto = body.nome_completo?.trim() ?? "";
   const email = body.email?.trim().toLowerCase() ?? "";
   const whatsapp = body.whatsapp?.trim() ?? "";
-  const nomeConta = body.nome_conta?.trim() ?? "";
   const redes = Array.isArray(body.redes_sociais)
     ? [
         ...new Set(
@@ -102,6 +108,8 @@ app.post("/api/applications", async (c) => {
         ),
       ]
     : [];
+  const instagramHandle = normalizeHandle(body.instagram_handle ?? "");
+  const tiktokHandle = normalizeHandle(body.tiktok_handle ?? "");
 
   if (!nomeCompleto || nomeCompleto.length < 2) {
     return jsonError("Informe o nome completo", 400);
@@ -112,35 +120,41 @@ app.post("/api/applications", async (c) => {
   if (!whatsapp || normalizePhone(whatsapp).length < 10) {
     return jsonError("Informe um WhatsApp válido", 400);
   }
-  if (!nomeConta) {
-    return jsonError("Informe o nome da conta", 400);
-  }
   if (redes.length === 0) {
-    return jsonError("Selecione ao menos uma rede social", 400);
+    return jsonError("Selecione Instagram, TikTok ou os dois", 400);
   }
+  if (redes.includes("instagram") && !instagramHandle) {
+    return jsonError("Informe o @ do Instagram", 400);
+  }
+  if (redes.includes("tiktok") && !tiktokHandle) {
+    return jsonError("Informe o @ do TikTok", 400);
+  }
+
+  const nomeConta = [
+    redes.includes("instagram") ? `Instagram ${instagramHandle}` : "",
+    redes.includes("tiktok") ? `TikTok ${tiktokHandle}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const supabase = getSupabase(c.env);
-  const { data, error } = await supabase
-    .from("applications")
-    .insert({
-      nome_completo: nomeCompleto,
-      email,
-      whatsapp: normalizePhone(whatsapp),
-      nome_conta: nomeConta,
-      redes_sociais: redes,
-    })
-    .select("id")
-    .single();
+  const { data, error } = await supabase.rpc("submit_application", {
+    p_nome_completo: nomeCompleto,
+    p_email: email,
+    p_whatsapp: normalizePhone(whatsapp),
+    p_nome_conta: nomeConta,
+    p_redes_sociais: redes,
+  });
 
   if (error) {
-    if (error.code === "23505") {
+    if (error.code === "23505" || error.message?.includes("duplicate")) {
       return jsonError("Este e-mail já foi cadastrado", 409);
     }
     console.error("insert_error", error);
     return jsonError("Não foi possível enviar a candidatura", 500);
   }
 
-  return c.json({ ok: true, id: data.id }, 201);
+  return c.json({ ok: true, id: data }, 201);
 });
 
 app.post("/api/admin/login", async (c) => {
